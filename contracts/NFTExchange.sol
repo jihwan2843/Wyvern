@@ -16,6 +16,21 @@ contract NFTExchange is Ownable {
     bytes32 private constant ORDER_TYPEHASH =
         0x437a5ccd912c6a90692bf48ff59bd71607c053d62292db467002418254aa1f4d;
 
+    bytes32 private DOMAIN_SEPERATOR =
+        keccak256(
+            abi.encode(
+                keccak256(
+                    "EIP721Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                ),
+                keccak256("Wyvern Clone Coding Exchange"),
+                // version
+                keccak256("1"),
+                // chainId
+                5,
+                address(this)
+            )
+        );
+
     // 수수료를 납부하는 주소
     address public feeAddress;
 
@@ -216,9 +231,11 @@ contract NFTExchange is Ownable {
     function validateOrderSig(
         Order memory order,
         Sig memory sig
-    ) internal pure returns (bytes32 orderHash) {
-        orderHash = hashOrder(order);
-        require(ecrecover(orderHash, sig.v, sig.r, sig.s) == order.maker);
+    ) internal view returns (bytes32 orderHash) {
+        bytes32 sigMessage;
+        (orderHash, sigMessage) = orderSigMessage(order);
+
+        require(ecrecover(sigMessage, sig.v, sig.r, sig.s) == order.maker);
     }
 
     // 해쉬값 구하기
@@ -302,5 +319,14 @@ contract NFTExchange is Ownable {
                     (mask[i] & desired[i]);
             }
         }
+    }
+
+    function orderSigMessage(
+        Order memory order
+    ) internal view returns (bytes32 orderHash, bytes32 sigMessage) {
+        orderHash = hashOrder(order);
+        sigMessage = keccak256(
+            abi.encodePacked("\x19\x01", DOMAIN_SEPERATOR, orderHash)
+        );
     }
 }
