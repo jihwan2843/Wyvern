@@ -51,7 +51,7 @@ contract NFTExchange is Ownable {
         Sig memory buySig,
         Order memory sell,
         Sig memory sellSig
-    ) external {
+    ) external payable {
         bytes32 buyHash = validateOrder(buy, buySig);
         bytes32 sellHash = validateOrder(sell, sellSig);
 
